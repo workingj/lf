@@ -1,0 +1,8 @@
+[package]
+name = "lf"
+version = "0.1.0"
+authors = ["workingj <workingj@outlook.de>"]
+
+[dependencies]
+structopt = "0.2.6"
+chrono = "0.4.1"

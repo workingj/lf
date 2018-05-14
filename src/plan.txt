@@ -1,0 +1,25 @@
+lastedited 
+size
+
+
+main {
+    args()
+    run()
+}
+
+args()
+
+run(){
+    if ascending time
+    if descending time
+    merge_to_string()
+    output()
+}
+
+ascending_time()
+
+descending_time()
+
+merge(file,folder)
+
+output

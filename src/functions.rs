@@ -1,5 +1,5 @@
 use std::env;
-use std::fs::{DirEntry, read_dir};
+use std::fs::{DirEntry, read_dir, FileType};
 use std::process::{exit};
 
 extern crate chrono;
@@ -12,23 +12,30 @@ pub struct Config {
     pub size_desc: bool,
     pub name_desc: bool,
     pub time_desc: bool,
+    pub filetype: bool,
 }
 
 /// instantiate a config struct
-fn build_config (s: bool, n: bool, t: bool) -> Config {
+fn build_config (s: bool, n: bool, t: bool, f: bool) -> Config {
     Config {
         size_desc: s,
         name_desc: n,
         time_desc: t,
+        filetype: f,
     }
 }
 
 /// creates a config struct for further procedures
 /// exits if the args ```--help``` or ```--version``` are given
 pub fn get_args () -> Config {
-    let mut config = build_config(false, false, false);
+    let mut config = build_config(false, false, false, false);
 
     let args: Vec<String> = env::args().collect();
+
+    if args.len() > 2 {
+        config.filetype = true;
+    }
+
     for arg in args {
         if arg == "-v" || arg == "--version"{
             println!("{}",VERSION);
@@ -147,7 +154,10 @@ pub fn sort_name_ascending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
 pub fn sort_name_descending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
     let mut out: Vec<DirEntry> = Vec::new();
     let mut position: usize = 0;
+    for item in &items {
+        println!(" in get ending: {}",item.path().extension().unwrap_or(std::ffi::OsStr::new("foo")).to_str().unwrap_or("hgh"));
 
+    }
     while items.len() > 0 {
         {
             let max = &items[0];
@@ -211,6 +221,24 @@ pub fn sort_time_descending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
     out
 }
 
+#[allow(unused)]
+pub fn get_file_from_ending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
+    let mut out: Vec<DirEntry> = Vec::new();
+    let mut search_type: FileType;
+
+    for item in items {
+        println!(" in get ending: {}",item.path().extension().unwrap().to_str().unwrap());
+    }
+    out
+}
+
+#[allow(dead_code)]
+fn get_filetype (entry: &DirEntry) -> FileType {
+    entry.metadata()
+        .expect("could not read metadata")
+        .file_type()
+}
+
 fn get_secs(entry: &DirEntry) -> u64 {
     entry.metadata()
         .expect("could not read metadata")
@@ -272,7 +300,7 @@ workingj <workingj@outlook.de>
 Lists all files and folders in the current directory
 
 USAGE:
-    lf [FLAG] 
+    lf [FLAG] [FILEEXTENSION]
 
 FLAGS:
     -h, --help        Prints help information
@@ -280,8 +308,9 @@ FLAGS:
     -s, --size-desc   Sorts entries size descending
     -n, --name-desc   Sorts entries name ascending
     -t, --time-desc   Sorts entries time desending";
+    
 
 static VERSION: &'static str = "
 lf - List Files/Folders
 workingj <workingj@outlook.de>
-Version: 0.3";
+Version: 0.4";

@@ -20,25 +20,13 @@ fn main() {
         },
         Ok(()) => exit(0),
     };
-/*
-    // Folders
-    for item in sort_time_ascending(content.0) {
-        let modified: DateTime<Local> = DateTime::from(item.metadata().unwrap().modified().unwrap());
-        println!("asc time: D {} {:?}", item.path().to_str().unwrap(), modified.format("%_d. %b %H:%M").to_string());
-    }
-    // Files
-    for item in sort_time_ascending(content.1) {
-        let modified: DateTime<Local> = DateTime::from(item.metadata().unwrap().modified().unwrap());
-        println!("asc time : F {:} {:?}", item.path().to_str().unwrap(), modified.format("%_d. %b %H:%M").to_string());
-    }
-*/
 }
 
 fn run(args: Config, content: Content) -> Result<(), Box<Error>> {
     let mut folders: Vec<DirEntry> = Vec::new();
     let mut files: Vec<DirEntry> = Vec::new();
     let mut output: Vec<String> = Vec::new();
-
+    
     if args.size_desc == true {
         folders = content.0;
         files = sort_size_descending(content.1);

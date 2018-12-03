@@ -1,8 +1,22 @@
 [package]
 name = "lf"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["workingj <workingj@outlook.de>"]
 
 [dependencies]
-structopt = "0.2.6"
-chrono = "0.4.1"
+structopt = "0.2.13"
+chrono = "0.4.6"
+
+[profile.release]
+panic = "abort"    # Remove Error Messages
+lto = true         # Link Time Optimisation
+codegen-units = 1
+incremental = false
+opt-level = "z"
+
+[profile.dev]
+panic = "unwinding"
+lto = false
+codegen-units = 1
+incremental = true
+opt-level = "z"

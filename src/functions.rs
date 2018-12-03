@@ -1,6 +1,7 @@
 use std::env;
 use std::fs::{DirEntry, read_dir, FileType};
 use std::process::{exit};
+use std::ffi::OsStr;
 
 extern crate chrono;
 use self::chrono::{DateTime, Local};
@@ -27,7 +28,7 @@ fn build_config (s: bool, n: bool, t: bool, f: bool) -> Config {
 
 /// creates a config struct for further procedures
 /// exits if the args ```--help``` or ```--version``` are given
-pub fn get_args () -> Config {
+pub fn get_config_from_args () -> Config {
     let mut config = build_config(false, false, false, false);
 
     let args: Vec<String> = env::args().collect();
@@ -35,7 +36,7 @@ pub fn get_args () -> Config {
     if args.len() > 2 {
         config.filetype = true;
     }
-
+    // TODO Adding -e for filending and better input version
     for arg in args {
         if arg == "-v" || arg == "--version"{
             println!("{}",VERSION);
@@ -106,7 +107,7 @@ pub fn sort_size_ascending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
 
 pub fn sort_size_descending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
     let mut out: Vec<DirEntry> = Vec::new();
-    let mut position: usize = 0;
+    let mut position: usize;
 
     while items.len() > 0 {
         {
@@ -225,9 +226,13 @@ pub fn sort_time_descending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
 pub fn get_file_from_ending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
     let mut out: Vec<DirEntry> = Vec::new();
     let mut search_type: FileType;
+    let args: Vec<String> = env::args().collect();
+    let default = OsStr::new("");
 
     for item in items {
-        println!(" in get ending: {}",item.path().extension().unwrap().to_str().unwrap());
+        if args[2] == item.path().extension().unwrap_or(default).to_str().unwrap() {
+            out.push(item);
+        }
     }
     out
 }
@@ -273,7 +278,7 @@ pub fn as_formated_bytes(size: u64) -> String{
     bytes
 }
 
-pub fn merge(folders: Vec<DirEntry>, files: Vec<DirEntry>) -> Vec<String> {
+pub fn string_output_from_files_and_folders(folders: Vec<DirEntry>, files: Vec<DirEntry>) -> Vec<String> {
     let mut output: Vec<String> = Vec::new();
     
     for folder in folders {
@@ -283,6 +288,19 @@ pub fn merge(folders: Vec<DirEntry>, files: Vec<DirEntry>) -> Vec<String> {
         let name = folder.path().as_path().file_name().unwrap().to_owned().into_string().unwrap();
         output.push(format!(" {} D {:>11}  {}",time, size, name));
     }
+    for file in files {
+        let modified: DateTime<Local> = DateTime::from(file.metadata().unwrap().modified().unwrap());
+        let time = modified.format("%D %H:%M").to_string();
+        let size = as_formated_bytes(file.metadata().unwrap().len());
+        let mut name = file.path().as_path().file_name().unwrap().to_owned().into_string().unwrap();
+        output.push(format!(" {} F {:>11}  {}",time, size, name));
+    }
+
+    output
+}
+pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
+    let mut output: Vec<String> = Vec::new();
+
     for file in files {
         let modified: DateTime<Local> = DateTime::from(file.metadata().unwrap().modified().unwrap());
         let time = modified.format("%D %H:%M").to_string();

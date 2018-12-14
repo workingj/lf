@@ -55,7 +55,7 @@ dependencies = [
 
 [[package]]
 name = "lf"
-version = "0.2.0"
+version = "0.6.0"
 dependencies = [
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",

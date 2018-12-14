@@ -13,31 +13,36 @@ pub struct Config {
     pub size_desc: bool,
     pub name_desc: bool,
     pub time_desc: bool,
-    pub filetype: bool,
+    pub file_filter: bool,
+    pub file_type: String,
 }
 
 /// instantiate a config struct
-fn build_config (s: bool, n: bool, t: bool, f: bool) -> Config {
+fn build_config (s: bool, n: bool, t: bool, f: bool, e: String) -> Config {
     Config {
         size_desc: s,
         name_desc: n,
         time_desc: t,
-        filetype: f,
+        file_filter: f,
+        file_type: e,
+
     }
 }
 
 /// creates a config struct for further procedures
 /// exits if the args ```--help``` or ```--version``` are given
 pub fn get_config_from_args () -> Config {
-    let mut config = build_config(false, false, false, false);
-
+    let mut config = build_config(false, false, false, false, String::new());
     let args: Vec<String> = env::args().collect();
+    let mut i: usize = 0;
+    
+    // TODO change config builder to exit when invalid is given
+    // TODO eventualy fully remove -f and simply appand extension optionally 
+        // if args.len() > 2 {
+    //     config.file_filter = true;
+    // }
 
-    if args.len() > 2 {
-        config.filetype = true;
-    }
-    // TODO Adding -e for filending and better input version
-    for arg in args {
+    for arg in &args {
         if arg == "-v" || arg == "--version"{
             println!("{}",VERSION);
             exit(0);
@@ -46,17 +51,22 @@ pub fn get_config_from_args () -> Config {
             println!("{}",HELP);
             exit(0);
         }
-        if arg == "-s"||arg == "--size-desc" {
+        if arg == "-f" || arg == "--file_type" {
+            config.file_filter = true;
+            config.file_type = args[i+1].clone();
+        }
+        if arg == "-s" || arg == "--size-desc" {
             config.size_desc = true;
         }
-        if arg == "-n"||arg == "--name-desc" {
+        if arg == "-n" || arg == "--name-desc" {
             config.name_desc = true;
         }
-        if arg == "-t"||arg == "--time-desc" {
+        if arg == "-t" || arg == "--time-desc" {
             config.time_desc = true;
         }
+        i +=1;
     }
-    // println!("{:#?}", config );
+    
     config
 }
 
@@ -155,10 +165,7 @@ pub fn sort_name_ascending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
 pub fn sort_name_descending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
     let mut out: Vec<DirEntry> = Vec::new();
     let mut position: usize = 0;
-    for item in &items {
-        println!(" in get ending: {}",item.path().extension().unwrap_or(std::ffi::OsStr::new("foo")).to_str().unwrap_or("hgh"));
 
-    }
     while items.len() > 0 {
         {
             let max = &items[0];
@@ -238,7 +245,7 @@ pub fn get_file_from_ending (mut items: Vec<DirEntry>) -> Vec<DirEntry> {
 }
 
 #[allow(dead_code)]
-fn get_filetype (entry: &DirEntry) -> FileType {
+fn get_file_fiter (entry: &DirEntry) -> FileType {
     entry.metadata()
         .expect("could not read metadata")
         .file_type()
@@ -313,22 +320,24 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
 }
 
 static HELP: &'static str = "
-lf - List Files/Folders 0.3
+lf - List Files/Folders 0.6.0
 workingj <workingj@outlook.de>
 Lists all files and folders in the current directory
 
 USAGE:
-    lf [FLAG] [FILEEXTENSION]
+    lf [FLAG] [FAG] [FILEEXTENSION]
 
 FLAGS:
-    -h, --help        Prints help information
-    -v, --version     Prints version information
-    -s, --size-desc   Sorts entries size descending
-    -n, --name-desc   Sorts entries name ascending
-    -t, --time-desc   Sorts entries time desending";
+    -h, --help        Print help information
+    -v, --version     Print version information
+    -s, --size-desc   Sort entries size descending
+    -n, --name-desc   Sort entries name ascending
+    -t, --time-desc   Sort entries time desending
+    -f, --file-type   List only files with given ending
+                      fileextension without periot.";
     
 
 static VERSION: &'static str = "
 lf - List Files/Folders
 workingj <workingj@outlook.de>
-Version: 0.4";
+Version: 0.6.0";

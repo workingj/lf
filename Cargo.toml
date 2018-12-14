@@ -1,6 +1,6 @@
 [package]
 name = "lf"
-version = "0.2.0"
+version = "0.6.0"
 authors = ["workingj <workingj@outlook.de>"]
 
 [dependencies]
@@ -15,7 +15,7 @@ incremental = false
 opt-level = "z"
 
 [profile.dev]
-panic = "unwinding"
+panic = "abort"
 lto = false
 codegen-units = 1
 incremental = true

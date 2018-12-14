@@ -18,7 +18,7 @@ fn main() {
         Ok(()) => exit(0),
     };
 }
-
+//TODO ad message for wrong flag
 fn run(config: Config, content: Content) -> Result<(), Box<Error>> {
     let folders: Vec<DirEntry>;
     let mut files: Vec<DirEntry>;
@@ -41,14 +41,13 @@ fn run(config: Config, content: Content) -> Result<(), Box<Error>> {
         files = content.1;
     }
 
-    if config.filetype == true {
+    if config.file_filter == true {
         files = get_file_from_ending(files);
         output = string_output_from_files(files);
     }
     else {
         output = string_output_from_files_and_folders(folders, files);
     }
-
 
     for line in output {
         println!("{}", line);

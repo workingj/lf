@@ -48,7 +48,7 @@ pub fn get_config_from_args () -> Config {
             exit(0);
         }
         if arg == "-h" || arg == "--help" {
-            println!("{}",HELP);
+            println!("{}",MAN_PAGE);
             exit(0);
         }
         if arg == "-f" || arg == "--file_type" {
@@ -319,25 +319,26 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
     output
 }
 
-static HELP: &'static str = "
-lf - List Files/Folders 0.6.0
-workingj <workingj@outlook.de>
-Lists all files and folders in the current directory
+static MAN_PAGE: &'static str = r#"
+NAME:
+    lf - List Files/Folders 0.6.1
+
+DESCRIPTION
+    Lists all files and folders in the current directory
 
 USAGE:
-    lf [FLAG] [FAG] [FILEEXTENSION]
+    lf [ -h | -v | -s | -n | -t ] [-f] [FILEEXTENSION]
 
-FLAGS:
+OPTIONS:
     -h, --help        Print help information
     -v, --version     Print version information
     -s, --size-desc   Sort entries size descending
     -n, --name-desc   Sort entries name ascending
     -t, --time-desc   Sort entries time desending
     -f, --file-type   List only files with given ending
-                      fileextension without periot.";
+                      fileextension without periot."#;
     
 
 static VERSION: &'static str = "
 lf - List Files/Folders
-workingj <workingj@outlook.de>
-Version: 0.6.0";
+VERSION: 0.6.1";

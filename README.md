@@ -6,7 +6,7 @@ A small tool like ls, to list files and/or folders.
 NAME:
     lf - List Files/Folders 0.6.1
 
-DESCRIPTION
+DESCRIPTION:
     Lists all files and folders in the current directory
 
 USAGE:

@@ -323,7 +323,7 @@ static MAN_PAGE: &'static str = r#"
 NAME:
     lf - List Files/Folders 0.6.1
 
-DESCRIPTION
+DESCRIPTION:
     Lists all files and folders in the current directory
 
 USAGE:

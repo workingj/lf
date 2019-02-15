@@ -6,6 +6,10 @@ use std::process::{exit};
 pub mod functions;
 use functions::*;
 
+// TODO: ad message for wrong flag
+// TODO: Error wenn bei -f keine extrension angegeben wird
+// TODO: extension wird mit dot angegeben
+
 fn main() {
     let config = get_config_from_args();
     let content = get_files_folders();
@@ -18,7 +22,6 @@ fn main() {
         Ok(()) => exit(0),
     };
 }
-//TODO ad message for wrong flag
 fn run(config: Config, content: Content) -> Result<(), Box<Error>> {
     let folders: Vec<DirEntry>;
     let mut files: Vec<DirEntry>;
@@ -42,7 +45,7 @@ fn run(config: Config, content: Content) -> Result<(), Box<Error>> {
     }
 
     if config.file_filter == true {
-        files = get_file_from_ending(files);
+        files = get_file_from_ending(files, &config.file_type);
         output = string_output_from_files(files);
     }
     else {

@@ -1,5 +1,9 @@
 # lf (list files/folders)
 
+![MIT licensed][license-image]
+
+[license-image]: https://img.shields.io/github/license/workingj/dh.svg
+
 A small tool like ls, to list files and/or folders.
 
 ```text

@@ -22,5 +22,5 @@ OPTIONS:
     -s, --size-desc   Sort entries size descending
     -n, --name-desc   Sort entries name ascending
     -t, --time-desc   Sort entries time desending
-    .file-extension   List only files with given file-extension."#;
+    .file-extension   List only files with given file-extension.
 ```

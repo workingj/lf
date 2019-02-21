@@ -7,9 +7,6 @@ pub mod functions;
 use functions::*;
 
 // TODO: ad message for wrong flag
-// TODO: Error wenn bei -f keine extrension angegeben wird
-// TODO: extension wird mit dot angegeben
-
 fn main() {
     let config = get_config_from_args();
     let content = get_files_folders();

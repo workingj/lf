@@ -234,21 +234,6 @@ pub fn sort_time_descending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
     out
 }
 
-// #[allow(unused)]
-// pub fn get_file_from_ending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
-//     let mut out: Vec<DirEntry> = Vec::new();
-//     let mut search_type: FileType;
-//     let args: Vec<String> = env::args().collect();
-//     let default = OsStr::new("");
-
-//     for item in items {
-//         if args[2] == item.path().extension().unwrap_or(default).to_str().unwrap() {
-//             out.push(item);
-//         }
-//     }
-//     out
-// }
-// #[allow(unused)]
 // get all DirEntrys from File-List that match the given file extension
 pub fn get_file_from_ending(items: Vec<DirEntry>, file_type: &str) -> Vec<DirEntry> {
     let mut out: Vec<DirEntry> = Vec::new();
@@ -265,7 +250,7 @@ pub fn get_file_from_ending(items: Vec<DirEntry>, file_type: &str) -> Vec<DirEnt
 }
 
 #[allow(dead_code)]
-fn get_file_fiter(entry: &DirEntry) -> FileType {
+fn get_file_filter(entry: &DirEntry) -> FileType {
     entry
         .metadata()
         .expect("could not read metadata")
@@ -365,13 +350,13 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
 
 static MAN_PAGE: &'static str = r#"
 NAME:
-    lf - List Files/Folders 0.6.1
+    lf - List Files/Folders 0.7.0
 
 DESCRIPTION:
     Lists all files and folders in the current directory
 
 USAGE:
-    lf [ -h | -v | -s | -n | -t ] [.FILEEXTENSION]
+    lf [ -h | -v | -s | -n | -t ] [.file-extension]
 
 OPTIONS:
     -h, --help        Print help information
@@ -379,8 +364,8 @@ OPTIONS:
     -s, --size-desc   Sort entries size descending
     -n, --name-desc   Sort entries name ascending
     -t, --time-desc   Sort entries time desending
-    .[file extension] List only files with given file extension."#;
+    .file-extension   List only files with given file-extension."#;
 
 static VERSION: &'static str = "
 lf - List Files/Folders
-VERSION: 0.6.1";
+VERSION: 0.7.0";

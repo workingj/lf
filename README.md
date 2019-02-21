@@ -22,9 +22,5 @@ OPTIONS:
     -s, --size-desc   Sort entries size descending
     -n, --name-desc   Sort entries name ascending
     -t, --time-desc   Sort entries time desending
-<<<<<<< HEAD
     .file-extension    List only files with given file-extension.
-=======
-    .file-extension   List only files with given file-extension.
->>>>>>> 978b3d540a1501f233f40d836bf9ff440eef6bb9
 ```

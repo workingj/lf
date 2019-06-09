@@ -2,43 +2,41 @@ use std::env;
 use std::ffi::OsStr;
 use std::fs::{read_dir, DirEntry, FileType};
 use std::process::exit;
-
 extern crate chrono;
 use self::chrono::{DateTime, Local};
 
 /// struct for configuring the run function
-#[derive(Debug)]
 pub struct Config {
+    pub size_asc: bool,
     pub size_desc: bool,
+    pub name_asc: bool,
     pub name_desc: bool,
+    pub time_asc: bool,
     pub time_desc: bool,
     pub file_filter: bool,
     pub file_type: String,
+    pub path: String,
 }
 
-/// instantiate a config struct
-fn build_config(s: bool, n: bool, t: bool, f: bool, e: String) -> Config {
-    Config {
-        size_desc: s,
-        name_desc: n,
-        time_desc: t,
-        file_filter: f,
-        file_type: e,
+impl Config {
+    fn new() -> Config {
+        Config {
+            size_asc: false,
+            size_desc: false,
+            name_asc: false,
+            name_desc: false,
+            time_asc: false,
+            time_desc: false,
+            file_filter: false,
+            file_type: String::new(),
+            path: String::new(),
+        }
     }
 }
 
-/// creates a config struct for further procedures
-/// exits if the args ```--help``` or ```--version``` are given
 pub fn get_config_from_args() -> Config {
-    let mut config = build_config(false, false, false, false, String::new());
-    let args: Vec<String> = env::args().collect();
-    let mut i: usize = 0;
-
-    // TODO change config builder to exit when invalid is given
-    // TODO eventualy fully remove -f and simply appand extension optionally
-    // if args.len() > 2 {
-    //     config.file_filter = true;
-    // }
+    let mut config = Config::new();
+    let args: Vec<String> = env::args().skip(1).collect();
 
     for arg in &args {
         if arg == "-v" || arg == "--version" {
@@ -49,23 +47,43 @@ pub fn get_config_from_args() -> Config {
             println!("{}", MAN_PAGE);
             exit(0);
         }
+        if arg == "-s" || arg == "--size-asc" {
+            config.size_asc = true;
+            break;
+        }
+        if arg == "-sd" || arg == "--size-desc" {
+            config.size_desc = true;
+            break;
+        }
+        if arg == "-n" || arg == "--name-asc" {
+            config.name_asc = true;
+            break;
+        }
+        if arg == "-nd" || arg == "--name-desc" {
+            config.name_desc = true;
+            break;
+        }
+        if arg == "-t" || arg == "--time-asc" {
+            config.time_asc = true;
+            break;
+        }
+        if arg == "-td" || arg == "--time-desc" {
+            config.time_desc = true;
+            break;
+        }
         //  check for file extension
         if arg.chars().nth(0).unwrap() == '.' {
             config.file_filter = true;
             config.file_type = arg[1..].to_string();
+            break;
         }
-        if arg == "-s" || arg == "--size-desc" {
-            config.size_desc = true;
+        // chek if valid path is given
+        if !read_dir(arg).is_err() {
+            config.path = arg.to_string();
+            break;
+        } else {
+            println!("ERROR: filepath not valid!");
         }
-        if arg == "-n" || arg == "--name-desc" {
-            config.name_desc = true;
-        }
-        if arg == "-t" || arg == "--time-desc" {
-            config.time_desc = true;
-        }
-
-
-        i += 1;
     }
 
     config
@@ -74,11 +92,17 @@ pub fn get_config_from_args() -> Config {
 /// Container for the filesystem entries
 pub struct Content(pub Vec<DirEntry>, pub Vec<DirEntry>);
 
-pub fn get_files_folders() -> Content {
+pub fn get_files_folders(config: &Config) -> Content {
     let mut files: Vec<DirEntry> = Vec::new();
     let mut folders: Vec<DirEntry> = Vec::new();
 
-    let entries = read_dir(".");
+    let entries;
+
+    if config.path.is_empty() {
+        entries = read_dir(".");
+    } else {
+        entries = read_dir(format!("./{}", config.path));
+    }
     match entries {
         Err(e) => {
             println!("{}", e);
@@ -95,6 +119,62 @@ pub fn get_files_folders() -> Content {
         }
     }
     Content(folders, files)
+}
+
+#[allow(dead_code)]
+fn get_file_filter(entry: &DirEntry) -> FileType {
+    entry
+        .metadata()
+        .expect("could not read metadata")
+        .file_type()
+}
+
+fn get_secs(entry: &DirEntry) -> u64 {
+    entry
+        .metadata()
+        .expect("could not read metadata")
+        .modified()
+        .expect("could not read metadata.modified")
+        .elapsed()
+        .expect("could not get duration")
+        .as_secs()
+}
+
+fn get_size(entry: &DirEntry) -> u64 {
+    entry.metadata().expect("could not read metadata").len()
+}
+
+// get all DirEntrys from File-List that match the given file extension
+pub fn get_file_from_ending(items: Vec<DirEntry>, file_type: &str) -> Vec<DirEntry> {
+    let mut out: Vec<DirEntry> = Vec::new();
+    let default = OsStr::new("");
+
+    let file_type: String = String::from(file_type);
+
+    for item in items {
+        if file_type == item.path().extension().unwrap_or(default).to_str().unwrap() {
+            out.push(item);
+        }
+    }
+    out
+}
+
+/// formating the files size in bytes
+pub fn as_formated_bytes(size: u64) -> String {
+    let mut counter: u8 = 0;
+    let mut bytes = String::new();
+    let mut v = Vec::new();
+    for c in size.to_string().chars().rev() {
+        counter += 1;
+        v.push(c);
+        if counter == 3 && size > 999 || counter == 6 && size > 999999 {
+            v.push('.');
+        }
+    }
+    for c in v.iter().rev() {
+        bytes.push(*c);
+    }
+    bytes
 }
 
 pub fn sort_size_ascending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
@@ -234,69 +314,13 @@ pub fn sort_time_descending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
     out
 }
 
-// get all DirEntrys from File-List that match the given file extension
-pub fn get_file_from_ending(items: Vec<DirEntry>, file_type: &str) -> Vec<DirEntry> {
-    let mut out: Vec<DirEntry> = Vec::new();
-    let default = OsStr::new("");
-
-    let file_type: String = String::from(file_type);
-
-    for item in items {
-        if file_type == item.path().extension().unwrap_or(default).to_str().unwrap() {
-            out.push(item);
-        }
-    }
-    out
-}
-
-#[allow(dead_code)]
-fn get_file_filter(entry: &DirEntry) -> FileType {
-    entry
-        .metadata()
-        .expect("could not read metadata")
-        .file_type()
-}
-
-fn get_secs(entry: &DirEntry) -> u64 {
-    entry
-        .metadata()
-        .expect("could not read metadata")
-        .modified()
-        .expect("could not read metadata.modified")
-        .elapsed()
-        .expect("could not get duration")
-        .as_secs()
-}
-
-fn get_size(entry: &DirEntry) -> u64 {
-    entry.metadata().expect("could not read metadata").len()
-}
-
-/// formating the files size in bytes
-pub fn as_formated_bytes(size: u64) -> String {
-    let mut counter: u8 = 0;
-    let mut bytes = String::new();
-    let mut v = Vec::new();
-    for c in size.to_string().chars().rev() {
-        counter += 1;
-        v.push(c);
-        if counter == 3 && size > 999 || counter == 6 && size > 999999 {
-            v.push('.');
-        }
-    }
-    for c in v.iter().rev() {
-        bytes.push(*c);
-    }
-    bytes
-}
-
 pub fn string_output_from_files_and_folders(folders: Vec<DirEntry>,files: Vec<DirEntry>,) -> Vec<String> {
     let mut output: Vec<String> = Vec::new();
 
     for folder in folders {
         let modified: DateTime<Local> =
             DateTime::from(folder.metadata().unwrap().modified().unwrap());
-        let time = modified.format("%D %H:%M").to_string();
+        let time = modified.format("%Y/%m/%d %H:%M:%S").to_string();
         let size = " ";
         let name = folder
             .path()
@@ -306,12 +330,13 @@ pub fn string_output_from_files_and_folders(folders: Vec<DirEntry>,files: Vec<Di
             .to_owned()
             .into_string()
             .unwrap();
-        output.push(format!(" {} D {:>11}  {}", time, size, name));
+        output.push(format!(" {} D {:>12}  {}", time, size, name));
     }
+
     for file in files {
         let modified: DateTime<Local> =
             DateTime::from(file.metadata().unwrap().modified().unwrap());
-        let time = modified.format("%D %H:%M").to_string();
+        let time = modified.format("%Y/%m/%d %H:%M:%S").to_string();
         let size = as_formated_bytes(file.metadata().unwrap().len());
         let mut name = file
             .path()
@@ -321,7 +346,7 @@ pub fn string_output_from_files_and_folders(folders: Vec<DirEntry>,files: Vec<Di
             .to_owned()
             .into_string()
             .unwrap();
-        output.push(format!(" {} F {:>11}  {}", time, size, name));
+        output.push(format!(" {} F {:>12}  {}", time, size, name));
     }
 
     output
@@ -332,7 +357,7 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
     for file in files {
         let modified: DateTime<Local> =
             DateTime::from(file.metadata().unwrap().modified().unwrap());
-        let time = modified.format("%D %H:%M").to_string();
+        let time = modified.format("%Y/%m/%d %H:%M:%S").to_string();
         let size = as_formated_bytes(file.metadata().unwrap().len());
         let mut name = file
             .path()
@@ -356,7 +381,7 @@ DESCRIPTION:
     Lists all files and folders in the current directory
 
 USAGE:
-    lf [ -h | -v | -s | -n | -t ] [.file-extension]
+    lf [folder or path] [ -h | -v | -s | -n | -t ] [.file-extension]
 
 OPTIONS:
     -h, --help        Print help information
@@ -364,7 +389,9 @@ OPTIONS:
     -s, --size-desc   Sort entries size descending
     -n, --name-desc   Sort entries name ascending
     -t, --time-desc   Sort entries time desending
-    .file-extension   List only files with given file-extension."#;
+    .file-extension   List only files with given extension.
+    folder or path    Lists all entries in the given folder or path. Has to be a subfolder of the current path."#;
+    
 
 static VERSION: &'static str = "
 lf - List Files/Folders

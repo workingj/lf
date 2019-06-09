@@ -8,7 +8,7 @@ A small tool like ls, to list files and/or folders.
 
 ```text
 NAME:
-    lf - List Files/Folders 0.7.0
+    lf - List Files/Folders 0.8.0
 
 DESCRIPTION:
     Lists all files and folders in the current directory
@@ -22,5 +22,5 @@ OPTIONS:
     -s, --size-desc   Sort entries size descending
     -n, --name-desc   Sort entries name ascending
     -t, --time-desc   Sort entries time desending
-    .file-extension    List only files with given file-extension.
+    .file-extension   List only files with given file-extension.
 ```

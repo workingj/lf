@@ -1,10 +1,10 @@
 [package]
 name = "lf"
-version = "0.6.1"
+version = "0.8.0"
 authors = ["workingj <workingj@outlook.de>"]
 
 [dependencies]
-structopt = "0.2.13"
+structopt = "0.2.15"
 chrono = "0.4.6"
 
 [profile.release]

@@ -1,68 +1,80 @@
 // lf
-use std::fs::{DirEntry};
+use std::env;
 use std::error::Error;
-use std::process::{exit};
+use std::fs::DirEntry;
+use std::process::exit;
+pub mod error;
 pub mod functions;
+pub mod sort;
 use functions::*;
+use sort::*;
 
-fn main() {
-    let config = get_config_from_args();
-    let content = get_files_folders(&config);
+fn main() -> Result<(), Box<Error>> {
+    let args: Vec<String> = env::args().skip(1).collect();
+    let config = get_config_from_args(args)?;
+    let content = get_folders_files(&config);
 
     match run(config, content) {
         Err(e) => {
-            println!("{:?}",e);
+            println!("RUN ERROR: {}", e);
             exit(1);
-        },
+        }
         Ok(()) => exit(0),
     };
 }
 
-fn run(config: Config, content: Content) -> Result<(), Box<Error>> {
-    let folders: Vec<DirEntry>;
+fn run(config: Config, mut content: Content) -> Result<(), Box<Error>> {
+    sort_name_ascending(&mut content.files)?;
+    sort_name_ascending(&mut content.folders)?;
+
+    if config.name_asc {
+        println!("name ascending:");
+        sort_name_ascending(&mut content.files)?;
+        sort_name_ascending(&mut content.folders)?;
+    } else if config.name_desc {
+        println!("name descending:");
+        sort_name_descending(&mut content.files)?;
+        sort_name_descending(&mut content.folders)?;
+    } else if config.size_asc {
+        println!("size ascending:");
+        sort_size_ascending(&mut content.files)?;
+    } else if config.size_desc {
+        println!("size descending:");
+        sort_size_descending(&mut content.files)?;
+    } else if config.time_asc {
+        println!("time ascending:");
+        sort_time_ascending(&mut content.files)?;
+        sort_time_ascending(&mut content.folders)?;
+    } else if config.time_desc {
+        println!("time descending:");
+        sort_time_descending(&mut content.files)?;
+        sort_time_descending(&mut content.folders)?;
+    }
     let mut files: Vec<DirEntry>;
     let output: Vec<String>;
 
-    if config.size_asc == true {
-        folders = content.0;
-        files = sort_size_ascending(content.1);
-        print!("size ascending:");
-    } else if config.size_desc == true {
-        folders = content.0;
-        files = sort_size_descending(content.1);
-        print!("size descending:");
-    } else if config.name_asc == true {
-        folders = sort_name_ascending(content.0);
-        files = sort_name_ascending(content.1);
-        print!("name ascending:");
-    } else if config.name_desc == true {
-        folders = sort_name_descending(content.0);
-        files = sort_name_descending(content.1);
-        print!("name descending:");
-    } else if config.time_asc == true {
-        folders = sort_time_ascending(content.0);
-        files = sort_time_ascending(content.1);
-        print!("time ascending:");
-    } else if config.time_desc == true {
-        folders = sort_time_descending(content.0);
-        files = sort_time_descending(content.1);
-        print!("time descending:");
-    } else {
-        folders = content.0;
-        files = content.1;
-    }
-
-    if config.file_filter == true {
-        println!("Files: {}", files.len());
-        files = get_file_from_ending(files, &config.file_type);
+    print!("{}", env::current_dir().unwrap().display());
+    if config.file_filter {
+        println!(
+            "/{}\t| *.{} | FILES: {} |",
+            &config.path.to_str().unwrap(),
+            config.file_type,
+            content.files.len()
+        );
+        files = get_file_from_ending(content.files, &config.file_type);
         output = string_output_from_files(files);
     } else {
-        println!(" {} Folders & {} Files", folders.len(), files.len());
-        output = string_output_from_files_and_folders(folders, files);
+        println!(
+            "/{}\t| FOLDERS: {} | Files: {} |",
+            &config.path.to_str().unwrap(),
+            content.folders.len(),
+            content.files.len()
+        );
+        output = string_output_from_files_and_folders(content.folders, content.files);
     }
     for line in output {
         println!("{}", line);
     }
 
-    return Ok(())
+    Ok(())
 }

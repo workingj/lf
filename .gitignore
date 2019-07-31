@@ -1,3 +1,7 @@
 
 /target
 **/*.rs.bk
+build.sh
+dings1.md
+lha.md
+/.dings

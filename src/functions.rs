@@ -1,11 +1,22 @@
-use std::env;
+use std::error::Error;
 use std::ffi::OsStr;
 use std::fs::{read_dir, DirEntry, FileType};
+use std::path::PathBuf;
 use std::process::exit;
 extern crate chrono;
 use self::chrono::{DateTime, Local};
+use error::my_error;
+
+#[allow(dead_code)]
+fn get_file_filter(entry: &DirEntry) -> FileType {
+    entry
+        .metadata()
+        .expect("could not read metadata")
+        .file_type()
+}
 
 /// struct for configuring the run function
+#[derive(Debug)]
 pub struct Config {
     pub size_asc: bool,
     pub size_desc: bool,
@@ -15,7 +26,7 @@ pub struct Config {
     pub time_desc: bool,
     pub file_filter: bool,
     pub file_type: String,
-    pub path: String,
+    pub path: PathBuf,
 }
 
 impl Config {
@@ -23,21 +34,20 @@ impl Config {
         Config {
             size_asc: false,
             size_desc: false,
-            name_asc: false,
-            name_desc: false,
             time_asc: false,
             time_desc: false,
+            name_asc: false,
+            name_desc: false,
             file_filter: false,
             file_type: String::new(),
-            path: String::new(),
+            path: PathBuf::new(),
         }
     }
 }
 
-pub fn get_config_from_args() -> Config {
+/// Building the `Config` for the main run function
+pub fn get_config_from_args(args: Vec<String>) -> Result<Config, Box<Error>> {
     let mut config = Config::new();
-    let args: Vec<String> = env::args().skip(1).collect();
-
     for arg in &args {
         if arg == "-v" || arg == "--version" {
             println!("{}", VERSION);
@@ -71,95 +81,110 @@ pub fn get_config_from_args() -> Config {
             config.time_desc = true;
             break;
         }
+
+        let mut path = PathBuf::new();
+
+        // check if path is given
+        if arg.chars().nth(0).unwrap() == '/' || arg.chars().nth(0).unwrap() == '\\' {
+            path.push(&arg[1..]);
+            if path.exists() {
+                if path.is_file() {
+                    return Result::Err(Box::new(my_error("path is a file!".to_string())));
+                } else {
+                    config.path.push(path);
+                }
+            } else {
+                return Result::Err(Box::new(my_error("Path does not exist!".to_string())));
+            }
         //  check for file extension
-        if arg.chars().nth(0).unwrap() == '.' {
-            config.file_filter = true;
-            config.file_type = arg[1..].to_string();
-            break;
-        }
-        // chek if valid path is given
-        if !read_dir(arg).is_err() {
-            config.path = arg.to_string();
-            break;
-        } else {
-            println!("ERROR: filepath not valid!");
+        } else if arg.chars().nth(0).unwrap() == '.' {
+            path.push(&arg);
+            if path.is_dir() {
+                if config.path.to_str() == Some("") {
+                    config.path.push(path);
+                }
+            } else if path.is_file() {
+                return Result::Err(Box::new(my_error("given argument is a file!".to_string())));
+            // for fileextension
+            } else {
+                config.file_filter = true;
+                let path = path.display().to_string();
+                config.file_type = path[1..].to_string();
+            }
+        // check for normal input
+        } else if arg.chars().nth(0).unwrap() != '.'
+            || arg.chars().nth(0).unwrap() != '/'
+            || arg.chars().nth(0).unwrap() != '\\'
+        {
+            path.push(&arg);
+            if path.is_dir() {
+                config.path.push("/");
+                config.path.push(path);
+            } else if path.is_file() {
+                return Result::Err(Box::new(my_error("given argument is a file!".to_string())));
+            }
         }
     }
-
-    config
+    Ok(config)
 }
 
 /// Container for the filesystem entries
-pub struct Content(pub Vec<DirEntry>, pub Vec<DirEntry>);
+// pub struct Content(pub Vec<DirEntry>, pub Vec<DirEntry>);
+pub struct Content {
+    pub files: Vec<DirEntry>,
+    pub folders: Vec<DirEntry>,
+}
+fn build_content(files: Vec<DirEntry>, folders: Vec<DirEntry>) -> Content {
+    Content { folders, files }
+}
 
-pub fn get_files_folders(config: &Config) -> Content {
+/// Returns the Content `struct` from the read directory
+/// ```
+/// return Content(folders, files)
+/// ```
+pub fn get_folders_files(config: &Config) -> Content {
     let mut files: Vec<DirEntry> = Vec::new();
     let mut folders: Vec<DirEntry> = Vec::new();
 
-    let entries;
-
-    if config.path.is_empty() {
-        entries = read_dir(".");
+    let entries = if config.path.to_str() == Some("") {
+        read_dir(".")
     } else {
-        entries = read_dir(format!("./{}", config.path));
-    }
+        read_dir(format!("./{}", config.path.to_str().unwrap()))
+    };
+
     match entries {
-        Err(e) => {
-            println!("{}", e);
-            exit(1);
-        }
         Ok(entries) => {
             for entry in entries {
-                if entry.as_ref().unwrap().metadata().unwrap().is_dir() == true {
+                if entry.as_ref().unwrap().metadata().unwrap().is_dir() {
                     folders.push(entry.unwrap());
                 } else {
                     files.push(entry.unwrap());
                 }
             }
         }
-    }
-    Content(folders, files)
-}
-
-#[allow(dead_code)]
-fn get_file_filter(entry: &DirEntry) -> FileType {
-    entry
-        .metadata()
-        .expect("could not read metadata")
-        .file_type()
-}
-
-fn get_secs(entry: &DirEntry) -> u64 {
-    entry
-        .metadata()
-        .expect("could not read metadata")
-        .modified()
-        .expect("could not read metadata.modified")
-        .elapsed()
-        .expect("could not get duration")
-        .as_secs()
-}
-
-fn get_size(entry: &DirEntry) -> u64 {
-    entry.metadata().expect("could not read metadata").len()
-}
-
-// get all DirEntrys from File-List that match the given file extension
-pub fn get_file_from_ending(items: Vec<DirEntry>, file_type: &str) -> Vec<DirEntry> {
-    let mut out: Vec<DirEntry> = Vec::new();
-    let default = OsStr::new("");
-
-    let file_type: String = String::from(file_type);
-
-    for item in items {
-        if file_type == item.path().extension().unwrap_or(default).to_str().unwrap() {
-            out.push(item);
+        Err(e) => {
+            println!("in get ff)) {}", e);
+            exit(1);
         }
     }
-    out
+    build_content(files, folders)
 }
 
-/// formating the files size in bytes
+/// get all DirEntrys from File-List that match the given file extension
+pub fn get_file_from_ending(mut items: Vec<DirEntry>, file_type: &str) -> Vec<DirEntry> {
+    items.retain(|item| {
+        file_type
+            == item
+                .path()
+                .extension()
+                .unwrap_or_else(|| OsStr::new(""))
+                .to_str()
+                .unwrap()
+    });
+    items
+}
+
+/// formating the files size bytedisplay
 pub fn as_formated_bytes(size: u64) -> String {
     let mut counter: u8 = 0;
     let mut bytes = String::new();
@@ -167,7 +192,10 @@ pub fn as_formated_bytes(size: u64) -> String {
     for c in size.to_string().chars().rev() {
         counter += 1;
         v.push(c);
-        if counter == 3 && size > 999 || counter == 6 && size > 999999 {
+        if counter == 3 && size > 999
+            || counter == 6 && size > 999_999
+            || counter == 9 && size > 999_999_999
+        {
             v.push('.');
         }
     }
@@ -177,151 +205,18 @@ pub fn as_formated_bytes(size: u64) -> String {
     bytes
 }
 
-pub fn sort_size_ascending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
-    let mut out: Vec<DirEntry> = Vec::new();
-    let mut position: usize = 0;
-
-    while items.len() > 0 {
-        {
-            let min = get_size(&items[0]);
-            for i in 0..items.len() {
-                position = 0;
-                if min > get_size(&items[i]) {
-                    position = i;
-                }
-            }
-        }
-        out.push(items.remove(position));
-    }
-    out
-}
-
-pub fn sort_size_descending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
-    let mut out: Vec<DirEntry> = Vec::new();
-    let mut position: usize;
-
-    while items.len() > 0 {
-        {
-            let mut min = get_size(&items[0]);
-            position = 0;
-            for i in 0..items.len() {
-                if min < get_size(&items[i]) {
-                    position = i;
-                    min = get_size(&items[i]);
-                }
-            }
-        }
-        out.push(items.remove(position));
-    }
-    out
-}
-
-pub fn sort_name_ascending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
-    let mut out: Vec<DirEntry> = Vec::new();
-    let mut position: usize = 0;
-
-    while items.len() > 0 {
-        {
-            let min = &items[0];
-            for i in 0..items.len() {
-                position = 0;
-                if min
-                    .file_name()
-                    .to_str()
-                    .unwrap_or("could not convert filename!")
-                    .as_bytes()
-                    > items[i]
-                        .file_name()
-                        .to_str()
-                        .unwrap_or("could not convert filename!")
-                        .as_bytes()
-                {
-                    position = i;
-                }
-            }
-        }
-        out.push(items.remove(position));
-    }
-    out
-}
-
-pub fn sort_name_descending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
-    let mut out: Vec<DirEntry> = Vec::new();
-    let mut position: usize = 0;
-
-    while items.len() > 0 {
-        {
-            let max = &items[0];
-            for i in 0..items.len() {
-                position = 0;
-                if max
-                    .file_name()
-                    .to_str()
-                    .expect("could not convert filename!")
-                    .as_bytes()
-                    < items[i]
-                        .file_name()
-                        .to_str()
-                        .expect("could not convert filename!")
-                        .as_bytes()
-                {
-                    position = i;
-                }
-            }
-        }
-        out.push(items.remove(position));
-    }
-    out
-}
-
-pub fn sort_time_ascending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
-    let mut out: Vec<DirEntry> = Vec::new();
-    let mut position: usize;
-
-    while items.len() > 0 {
-        {
-            position = 0;
-            let mut min = get_secs(&items[0]);
-            for i in 0..items.len() {
-                if min > get_secs(&items[i]) {
-                    position = i;
-                    min = get_secs(&items[i]);
-                }
-            }
-        }
-        out.push(items.remove(position));
-    }
-    out
-}
-
-pub fn sort_time_descending(mut items: Vec<DirEntry>) -> Vec<DirEntry> {
-    let mut out: Vec<DirEntry> = Vec::new();
-    let mut position: usize;
-
-    while items.len() > 0 {
-        {
-            position = 0;
-            let mut min = get_secs(&items[0]);
-            for i in 0..items.len() {
-                if min > get_secs(&items[i]) {
-                    position = i;
-                    min = get_secs(&items[i]);
-                }
-            }
-        }
-        out.push(items.remove(position));
-    }
-    out
-}
-
-pub fn string_output_from_files_and_folders(folders: Vec<DirEntry>,files: Vec<DirEntry>,) -> Vec<String> {
+/// Create output Strings for files and folders
+pub fn string_output_from_files_and_folders(
+    folders: Vec<DirEntry>,
+    files: Vec<DirEntry>,
+) -> Vec<String> {
     let mut output: Vec<String> = Vec::new();
 
     for folder in folders {
         let modified: DateTime<Local> =
             DateTime::from(folder.metadata().unwrap().modified().unwrap());
         let time = modified.format("%Y/%m/%d %H:%M:%S").to_string();
-        let size = " ";
+        let size = "<dir>";
         let name = folder
             .path()
             .as_path()
@@ -330,7 +225,7 @@ pub fn string_output_from_files_and_folders(folders: Vec<DirEntry>,files: Vec<Di
             .to_owned()
             .into_string()
             .unwrap();
-        output.push(format!(" {} D {:>12}  {}", time, size, name));
+        output.push(format!(" {} {:>12}  {}", time, size, name));
     }
 
     for file in files {
@@ -338,7 +233,7 @@ pub fn string_output_from_files_and_folders(folders: Vec<DirEntry>,files: Vec<Di
             DateTime::from(file.metadata().unwrap().modified().unwrap());
         let time = modified.format("%Y/%m/%d %H:%M:%S").to_string();
         let size = as_formated_bytes(file.metadata().unwrap().len());
-        let mut name = file
+        let name = file
             .path()
             .as_path()
             .file_name()
@@ -346,20 +241,22 @@ pub fn string_output_from_files_and_folders(folders: Vec<DirEntry>,files: Vec<Di
             .to_owned()
             .into_string()
             .unwrap();
-        output.push(format!(" {} F {:>12}  {}", time, size, name));
+        output.push(format!(" {} {:>12}  {}", time, size, name));
     }
 
     output
 }
+
+/// Create string output only from files
 pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
     let mut output: Vec<String> = Vec::new();
 
     for file in files {
         let modified: DateTime<Local> =
             DateTime::from(file.metadata().unwrap().modified().unwrap());
-        let time = modified.format("%Y/%m/%d %H:%M:%S").to_string();
+        let time = modified.format("%y/%m/%d %H:%M:%S").to_string();
         let size = as_formated_bytes(file.metadata().unwrap().len());
-        let mut name = file
+        let name = file
             .path()
             .as_path()
             .file_name()
@@ -367,7 +264,7 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
             .to_owned()
             .into_string()
             .unwrap();
-        output.push(format!(" {} F {:>11}  {}", time, size, name));
+        output.push(format!(" {} {:>12}  {}", time, size, name));
     }
 
     output
@@ -375,7 +272,7 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
 
 static MAN_PAGE: &'static str = r#"
 NAME:
-    lf - List Files/Folders 0.7.0
+    lf - List Files/Folders 1.0.0
 
 DESCRIPTION:
     Lists all files and folders in the current directory
@@ -384,15 +281,18 @@ USAGE:
     lf [folder or path] [ -h | -v | -s | -n | -t ] [.file-extension]
 
 OPTIONS:
-    -h, --help        Print help information
-    -v, --version     Print version information
-    -s, --size-desc   Sort entries size descending
-    -n, --name-desc   Sort entries name ascending
-    -t, --time-desc   Sort entries time desending
-    .file-extension   List only files with given extension.
-    folder or path    Lists all entries in the given folder or path. Has to be a subfolder of the current path."#;
-    
+    folder or path    Lists all entries in the given folder or path. Has to be a subfolder of the current path.
+    -h,  --help        Print help information
+    -v,  --version     Print version information
+    -s,  --size-asc    Sort entries size ascending
+    -sd, --size-desc   Sort entries size descending
+    -n,  --name-asc    Sort entries name ascending
+    -nd, --name-desc   Sort entries name descending
+    -t,  --time-asc    Sort entries time asending
+    -td, --time-desc   Sort entries time desending
+    .file-extension    List only files with given file-extension.
+"#;
 
 static VERSION: &'static str = "
 lf - List Files/Folders
-VERSION: 0.7.0";
+VERSION: 1.0.0";

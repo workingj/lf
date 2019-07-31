@@ -99,7 +99,9 @@ pub fn get_config_from_args(args: Vec<String>) -> Result<Config, Box<Error>> {
         //  check for file extension
         } else if arg.chars().nth(0).unwrap() == '.' {
             path.push(&arg);
-            if path.is_dir() {
+            if !path.exists() {
+                return Result::Err(Box::new(my_error("given path is not valid!".to_string())));
+            } else if path.is_dir() {
                 if config.path.to_str() == Some("") {
                     config.path.push(path);
                 }
@@ -117,8 +119,9 @@ pub fn get_config_from_args(args: Vec<String>) -> Result<Config, Box<Error>> {
             || arg.chars().nth(0).unwrap() != '\\'
         {
             path.push(&arg);
-            if path.is_dir() {
-                config.path.push("/");
+            if !path.exists() {
+                return Result::Err(Box::new(my_error("given path is not valid!".to_string())));
+            } else if path.is_dir() {
                 config.path.push(path);
             } else if path.is_file() {
                 return Result::Err(Box::new(my_error("given argument is a file!".to_string())));

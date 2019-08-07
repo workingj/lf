@@ -56,8 +56,8 @@ fn run(config: Config, mut content: Content) -> Result<(), Box<Error>> {
     print!("{}", env::current_dir().unwrap().display());
     if config.file_filter {
         println!(
-            "/{}\t| *.{} | FILES: {} |",
-            &config.path.to_str().unwrap(),
+            "/{}\t *.{} | Files: {}",
+            config.path.to_str().unwrap(),
             config.file_type,
             content.files.len()
         );
@@ -65,8 +65,8 @@ fn run(config: Config, mut content: Content) -> Result<(), Box<Error>> {
         output = string_output_from_files(files);
     } else {
         println!(
-            "/{}\t| FOLDERS: {} | Files: {} |",
-            &config.path.to_str().unwrap(),
+            "/{}\t Folders: {} | Files: {}",
+            config.path.to_str().unwrap(),
             content.folders.len(),
             content.files.len()
         );

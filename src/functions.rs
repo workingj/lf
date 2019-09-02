@@ -46,7 +46,7 @@ impl Config {
 }
 
 /// Building the `Config` for the main run function
-pub fn get_config_from_args(args: Vec<String>) -> Result<Config, Box<Error>> {
+pub fn get_config_from_args(args: Vec<String>) -> Result<Config, Box<dyn Error>> {
     let mut config = Config::new();
     for arg in &args {
         if arg == "-v" || arg == "--version" {
@@ -191,11 +191,16 @@ pub fn get_file_from_ending(mut items: Vec<DirEntry>, file_type: &str) -> Vec<Di
 
 /// formating the files size bytedisplay
 pub fn as_formated_bytes(size: u64) -> String {
-    let mut counter: u8 = 0;
+    // let mut counter: u8 = 0;
     let mut bytes = String::new();
     let mut v = Vec::new();
-    for c in size.to_string().chars().rev() {
-        counter += 1;
+    let file_len = size.to_string();
+    let len = file_len.len() + 1;
+        dbg!(&file_len, &len);
+
+    for (c, counter) in file_len.chars().rev().zip(1..len) {
+        dbg!(&c, &counter);
+        // counter += 1;
         v.push(c);
         if counter == 3 && size > 999
             || counter == 6 && size > 999_999
@@ -275,7 +280,7 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
     output
 }
 
-static MAN_PAGE: &'static str = r#"
+static MAN_PAGE: &str = r#"
 NAME:
     lf - List Files/Folders 1.0.0
 
@@ -299,6 +304,6 @@ OPTIONS:
     .file-extension    List only files with given file-extension.
 "#;
 
-static VERSION: &'static str = "
+static VERSION: &str = "
 lf - List Files/Folders
 VERSION: 1.0.0";

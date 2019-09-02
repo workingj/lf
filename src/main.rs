@@ -9,7 +9,7 @@ pub mod sort;
 use functions::*;
 use sort::*;
 
-fn main() -> Result<(), Box<Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().skip(1).collect();
     let config = get_config_from_args(args)?;
     let content = get_folders_files(&config);
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<Error>> {
     };
 }
 
-fn run(config: Config, mut content: Content) -> Result<(), Box<Error>> {
+fn run(config: Config, mut content: Content) -> Result<(), Box<dyn Error>> {
     sort_name_ascending(&mut content.files)?;
     sort_name_ascending(&mut content.folders)?;
 
@@ -50,7 +50,7 @@ fn run(config: Config, mut content: Content) -> Result<(), Box<Error>> {
         sort_time_descending(&mut content.files)?;
         sort_time_descending(&mut content.folders)?;
     }
-    let mut files: Vec<DirEntry>;
+    let files: Vec<DirEntry>;
     let output: Vec<String>;
 
     print!("{}", env::current_dir().unwrap().display());

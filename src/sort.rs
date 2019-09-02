@@ -4,7 +4,7 @@
 use std::error::Error;
 use std::fs::DirEntry;
 
-pub fn sort_size_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> {
+pub fn sort_size_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<dyn Error>> {
     Ok(items.sort_by(|a, b| {
         a.metadata()
             .unwrap()
@@ -13,7 +13,7 @@ pub fn sort_size_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> 
     }))
 }
 
-pub fn sort_size_descending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> {
+pub fn sort_size_descending(items: &mut Vec<DirEntry>) -> Result<(), Box<dyn Error>> {
     Ok(items.sort_by(|a, b| {
         b.metadata()
             .unwrap()
@@ -22,7 +22,7 @@ pub fn sort_size_descending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>>
     }))
 }
 
-pub fn sort_name_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> {
+pub fn sort_name_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<dyn Error>> {
     Ok(items.sort_by(|a, b| {
         a.file_name()
             .to_str()
@@ -31,7 +31,7 @@ pub fn sort_name_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> 
     }))
 }
 
-pub fn sort_name_descending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> {
+pub fn sort_name_descending(items: &mut Vec<DirEntry>) -> Result<(), Box<dyn Error>> {
     Ok(items.sort_by(|a, b| {
         b.file_name()
             .to_str()
@@ -40,7 +40,7 @@ pub fn sort_name_descending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>>
     }))
 }
 
-pub fn sort_time_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> {
+pub fn sort_time_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<dyn Error>> {
     Ok(items.sort_by(|a, b| {
         a.metadata()
             .expect("could not read metadata")
@@ -61,7 +61,7 @@ pub fn sort_time_ascending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> 
     }))
 }
 
-pub fn sort_time_descending(items: &mut Vec<DirEntry>) -> Result<(), Box<Error>> {
+pub fn sort_time_descending(items: &mut Vec<DirEntry>) -> Result<(), Box<dyn Error>> {
     Ok(items.sort_by(|a, b| {
         b.metadata()
             .expect("could not read metadata")

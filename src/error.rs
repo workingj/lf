@@ -2,7 +2,10 @@ use std::error::Error;
 use std::fmt;
 
 pub struct MyError {
-	pub emsg: String,
+	pub emsg: String,// description
+	// cause
+	// source
+	//type_id
 }
 
 pub fn my_error(emsg: String) -> MyError {

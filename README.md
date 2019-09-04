@@ -17,8 +17,8 @@ USAGE:
     lf [folder or path] [ -h  -v  -s  -n  -t ] [.file-extension]
 
 OPTIONS:
-    folder or path     Lists all entries in the given folder or path. 
-                       Has to be a subfolder of the current path. 
+    folder or path     Lists all entries in the given folder or path.
+                       Has to be a subfolder of the current path.
     -h,  --help        Print help information
     -v,  --version     Print version information
     -s,  --size-asc    Sort size ascending

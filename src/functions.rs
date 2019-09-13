@@ -3,9 +3,11 @@ use std::ffi::OsStr;
 use std::fs::{read_dir, DirEntry, FileType};
 use std::path::PathBuf;
 use std::process::exit;
+// extern crates
 extern crate chrono;
 use self::chrono::{DateTime, Local};
-use error::my_error;
+// local modules
+use super::error::my_error;
 
 #[allow(dead_code)]
 fn get_file_filter(entry: &DirEntry) -> FileType {
@@ -196,10 +198,10 @@ pub fn as_formated_bytes(size: u64) -> String {
     let mut v = Vec::new();
     let file_len = size.to_string();
     let len = file_len.len() + 1;
-        dbg!(&file_len, &len);
+        // dbg!(&file_len, &len);
 
     for (c, counter) in file_len.chars().rev().zip(1..len) {
-        dbg!(&c, &counter);
+        // dbg!(&c, &counter);
         // counter += 1;
         v.push(c);
         if counter == 3 && size > 999
@@ -212,6 +214,16 @@ pub fn as_formated_bytes(size: u64) -> String {
     for c in v.iter().rev() {
         bytes.push(*c);
     }
+
+    if size > 999_999_999 {
+        bytes.push('G');
+    } else if size > 999_999 {
+         bytes.push('M');
+    } else if size > 999 {
+         bytes.push('k');
+    } else {
+        bytes.push('b');
+    }
     bytes
 }
 
@@ -219,8 +231,9 @@ pub fn as_formated_bytes(size: u64) -> String {
 pub fn string_output_from_files_and_folders(
     folders: Vec<DirEntry>,
     files: Vec<DirEntry>,
-) -> Vec<String> {
-    let mut output: Vec<String> = Vec::new();
+) -> (Vec<String>, Vec<String>) {
+    let mut folder_output: Vec<String> = Vec::new();
+    let mut file_output: Vec<String> = Vec::new();
 
     for folder in folders {
         let modified: DateTime<Local> =
@@ -235,7 +248,7 @@ pub fn string_output_from_files_and_folders(
             .to_owned()
             .into_string()
             .unwrap();
-        output.push(format!(" {} {:>12}  {}", time, size, name));
+        folder_output.push(format!(" {} {:>16}  {}", time, size, name));
     }
 
     for file in files {
@@ -251,10 +264,10 @@ pub fn string_output_from_files_and_folders(
             .to_owned()
             .into_string()
             .unwrap();
-        output.push(format!(" {} {:>12}  {}", time, size, name));
+        file_output.push(format!(" {} {:>16}  {}", time, size, name));
     }
 
-    output
+    (folder_output, file_output)
 }
 
 /// Create string output only from files
@@ -282,7 +295,7 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
 
 static MAN_PAGE: &str = r#"
 NAME:
-    lf - List Files/Folders 1.0.0
+    lf - List Files/Folders 1.1.2
 
 DESCRIPTION:
     Lists all files and folders in the current directory
@@ -306,4 +319,4 @@ OPTIONS:
 
 static VERSION: &str = "
 lf - List Files/Folders
-VERSION: 1.0.0";
+VERSION: 1.0.2";

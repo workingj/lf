@@ -86,9 +86,11 @@ pub fn get_config_from_args(args: Vec<String>) -> Result<Config, Box<dyn Error>>
 
         let mut path = PathBuf::new();
 
+        // TODO: add Root Path Support
         // check if path is given
         if arg.chars().nth(0).unwrap() == '/' || arg.chars().nth(0).unwrap() == '\\' {
             path.push(&arg[1..]);
+            // path.push("/");
             if path.exists() {
                 if path.is_file() {
                     return Result::Err(Box::new(my_error("Path is a file!".to_string())));
@@ -96,23 +98,25 @@ pub fn get_config_from_args(args: Vec<String>) -> Result<Config, Box<dyn Error>>
                     config.path.push(path);
                 }
             } else {
-                return Result::Err(Box::new(my_error("Path does not exist!".to_string())));
+                return Result::Err(Box::new(my_error("Path does not exist! ".to_string())));
             }
         //  check for file extension
         } else if arg.chars().nth(0).unwrap() == '.' {
             path.push(&arg);
-                dbg!(path.exists());
-                dbg!(path.is_file());
+            // dbg!(&path);
+            // dbg!(path.exists());
+            // dbg!(path.is_dir());
+            // dbg!(path.is_file());
             if path.exists() {
-                return Result::Err(Box::new(my_error("Given path is not valid!".to_string())));
-            } else if path.is_dir() {
-                if config.path.to_str() == Some("") {
+                if path.is_dir() {
                     config.path.push(path);
+                } else if path.is_file() {
+                    return Result::Err(Box::new(my_error(
+                        "Given argument is a file!".to_string(),
+                    )));
                 }
-            } else if path.is_file() {
-                return Result::Err(Box::new(my_error("Given argument is a file!".to_string())));
-            // for fileextension
             } else {
+                // for fileextension
                 config.file_filter = true;
                 let path = path.display().to_string();
                 config.file_type = path[1..].to_string();
@@ -198,7 +202,7 @@ pub fn as_formated_bytes(size: u64) -> String {
     let mut v = Vec::new();
     let file_len = size.to_string();
     let len = file_len.len() + 1;
-        // dbg!(&file_len, &len);
+    // dbg!(&file_len, &len);
 
     for (c, counter) in file_len.chars().rev().zip(1..len) {
         // dbg!(&c, &counter);
@@ -218,9 +222,9 @@ pub fn as_formated_bytes(size: u64) -> String {
     if size > 999_999_999 {
         bytes.push('G');
     } else if size > 999_999 {
-         bytes.push('M');
+        bytes.push('M');
     } else if size > 999 {
-         bytes.push('k');
+        bytes.push('k');
     } else {
         bytes.push('b');
     }

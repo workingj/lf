@@ -299,7 +299,7 @@ pub fn string_output_from_files(files: Vec<DirEntry>) -> Vec<String> {
 
 static MAN_PAGE: &str = r#"
 NAME:
-    lf - List Files/Folders 1.1.2
+    lf - List Files/Folders 1.1.3
 
 DESCRIPTION:
     Lists all files and folders in the current directory

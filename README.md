@@ -8,7 +8,7 @@ A simple tool like ls, to list files and/or folders.
 
 ```text
 NAME:
-    lf - List Files/Folders 1.1.2
+    lf - List Files/Folders 1.1.3
 
 DESCRIPTION:
     Lists all files and folders in the current directory
